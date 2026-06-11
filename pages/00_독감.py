@@ -70,7 +70,19 @@ st.markdown("""
 # ════════════════════════════════
 @st.cache_data
 def load_influenza():
-    df = pd.read_csv("인플루엔자 선택됨.csv", header=None, encoding="utf-8-sig")
+    encodings = ["cp949", "euc-kr", "utf-8", "utf-8-sig", "latin1"]
+    df = None
+    for enc in encodings:
+        try:
+            df = pd.read_csv("인플루엔자 선택됨.csv", header=None, encoding=enc)
+            break
+        except:
+            continue
+
+    if df is None:
+        st.error("인플루엔자 CSV 파일을 읽을 수 없습니다.")
+        st.stop()
+
     records = []
     for _, row in df.iterrows():
         season_raw = str(row[0]).strip()
@@ -79,12 +91,14 @@ def load_influenza():
             start_year = int(season[:4])
         except:
             continue
+
         for week_idx in range(1, len(row)):
             val = row[week_idx]
             try:
                 val = float(val)
             except:
                 val = np.nan
+
             actual_week = week_idx
             if actual_week <= 18:
                 month = 9 + (actual_week - 1) // 4
@@ -92,14 +106,21 @@ def load_influenza():
             else:
                 month = 1 + (actual_week - 18 - 1) // 4
                 year  = start_year + 1
+
             month = min(max(month, 1), 12)
+
             records.append({
-                "season": season, "start_year": start_year,
+                "season"        : season,
+                "start_year"    : start_year,
                 "week_in_season": actual_week,
-                "year": year, "month": month, "ili": val
+                "year"          : year,
+                "month"         : month,
+                "ili"           : val
             })
+
     flu = pd.DataFrame(records)
     flu.dropna(subset=["ili"], inplace=True)
+
     flu["season_kor"] = flu["month"].apply(
         lambda m: "겨울" if m in [12,1,2] else
                   ("봄"  if m in [3,4,5]  else
@@ -110,11 +131,23 @@ def load_influenza():
 
 @st.cache_data
 def load_temperature():
-    temp = pd.read_csv(
-        "ta_20260601093156.csv",
-        encoding="utf-8-sig",
-        skipinitialspace=True
-    )
+    encodings = ["cp949", "euc-kr", "utf-8", "utf-8-sig", "latin1"]
+    temp = None
+    for enc in encodings:
+        try:
+            temp = pd.read_csv(
+                "ta_20260601093156.csv",
+                encoding=enc,
+                skipinitialspace=True
+            )
+            break
+        except:
+            continue
+
+    if temp is None:
+        st.error("기온 CSV 파일을 읽을 수 없습니다.")
+        st.stop()
+
     temp.columns = [c.strip() for c in temp.columns]
     temp["날짜"] = temp["날짜"].astype(str).str.strip()
     temp["날짜"] = pd.to_datetime(temp["날짜"], errors="coerce")
@@ -229,7 +262,7 @@ st.plotly_chart(fig_scatter, use_container_width=True)
 st.markdown(f"""
 <div class="insight-box">
 💡 <b>해석:</b>
-추세선(검정 실선)은 뚜렷한 <b>음의 기울기</b>를 보여 기온이 낮을수록 ILI가 높아짐을 확인할 수 있습니다.
+추세선은 뚜렷한 <b>음의 기울기</b>를 보여 기온이 낮을수록 ILI가 높아짐을 확인할 수 있습니다.
 겨울(파란 점)은 저온·고ILI 영역에, 여름(주황 점)은 고온·저ILI 영역에 집중됩니다.
 피어슨 r = {r:.3f}로 <b>{strength} 음의 상관관계</b>가 존재합니다.
 </div>
@@ -238,7 +271,7 @@ st.markdown(f"""
 st.markdown("---")
 
 # ════════════════════════════════
-# 2. 월별 이중 축 (기온 막대 + ILI 라인)
+# 2. 월별 이중 축
 # ════════════════════════════════
 st.markdown('<div class="section-header">📅 월별 평균기온 vs 평균 ILI — 이중 축 비교</div>',
             unsafe_allow_html=True)
@@ -285,7 +318,7 @@ st.markdown("""
 💡 <b>해석:</b>
 기온(주황 막대)과 ILI(파란 선)는 <b>거울 대칭에 가까운 역방향 패턴</b>을 보입니다.
 기온이 가장 낮은 <b>1월에 ILI 최고</b>, 기온이 가장 높은 <b>7~8월에 ILI 최저</b>입니다.
-이 패턴은 기온이 독감 유행의 강력한 계절적 지표임을 직관적으로 보여줍니다.
+기온이 독감 유행의 강력한 계절적 지표임을 직관적으로 보여줍니다.
 </div>
 """, unsafe_allow_html=True)
 
@@ -333,7 +366,7 @@ st.markdown("""
 <div class="insight-box">
 💡 <b>해석:</b>
 겨울과 가을에서 음의 상관관계가 특히 강하게 나타납니다.
-여름의 경우 기온 변동폭이 작고 ILI도 전반적으로 낮아 상관관계가 약하게 나타날 수 있습니다.
+여름은 기온 변동폭이 작고 ILI도 전반적으로 낮아 상관관계가 약하게 나타납니다.
 겨울 내부에서도 기온이 더 낮은 달에 ILI가 더 높은 경향이 관찰됩니다.
 </div>
 """, unsafe_allow_html=True)
@@ -383,7 +416,7 @@ st.markdown("""
 st.markdown("---")
 
 # ════════════════════════════════
-# 5. 특정 시즌 상세 비교 (인터랙티브)
+# 5. 특정 시즌 상세 비교
 # ════════════════════════════════
 st.markdown('<div class="section-header">🔎 특정 시즌 기온-ILI 상세 비교</div>',
             unsafe_allow_html=True)
@@ -467,7 +500,7 @@ st.markdown("""
       공기 중 생존 시간이 길어집니다.</li>
   <li><b>숙주 면역력 저하:</b> 차가운 공기는 상기도 점막의 섬모 운동과 점액 방어 기능을 저하시켜
       바이러스 침투가 쉬워집니다.</li>
-  <li><b>실내 밀집:</b> 기온 하강 시 실내 체류 시간 증가 + 창문 닫힘 → 비말 전파 활성화.</li>
+  <li><b>실내 밀집:</b> 기온 하강 시 실내 체류 시간 증가 + 창문 닫힘으로 비말 전파가 활성화됩니다.</li>
   <li><b>비타민 D 감소:</b> 겨울철 일조량 감소로 인한 비타민 D 부족이 면역력 저하에 기여합니다.</li>
 </ul>
 </div>
@@ -488,7 +521,7 @@ st.markdown(f"""
 <div class="success-box">
 <h4>✅ 결론 및 시사점</h4>
 <p>
-기온과 독감 발생률 사이의 <b>통계적으로 유의한 음의 상관관계(r = {r:.3f})</b>는
+기온과 독감 발생률 사이의 <b>통계적으로 유의한 음의 상관관계 (r = {r:.3f})</b>는
 기온 데이터를 활용한 <b>독감 조기 경보 시스템</b> 개발 가능성을 시사합니다.
 <b>평균기온이 10℃ 이하로 하강하는 시점</b>을 독감 예방 강화 기준으로 설정하면
 공중보건 정책에 실질적 도움이 될 수 있습니다.
