@@ -68,7 +68,18 @@ st.markdown("""
 # ════════════════════════════════
 @st.cache_data
 def load_influenza():
-    df = pd.read_csv("인플루엔자 선택됨.csv", header=None, encoding="utf-8-sig")
+    encodings = ["cp949", "euc-kr", "utf-8", "utf-8-sig", "latin1"]
+    df = None
+    for enc in encodings:
+        try:
+            df = pd.read_csv("인플루엔자 선택됨.csv", header=None, encoding=enc)
+            break
+        except:
+            continue
+
+    if df is None:
+        st.error("인플루엔자 CSV 파일을 읽을 수 없습니다.")
+        st.stop()
 
     records = []
     for _, row in df.iterrows():
@@ -143,29 +154,32 @@ st.markdown('<div class="section-header">📌 핵심 통계 요약</div>',
 season_avg  = flu.groupby("season_kor")["ili"].mean()
 overall_max = flu["ili"].max()
 max_row     = flu.loc[flu["ili"].idxmax()]
-total_seasons = flu["season"].nunique()
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("📈 전체 최고 ILI",   f"{overall_max:.1f}")
+    st.metric("📈 전체 최고 ILI",  f"{overall_max:.1f}")
 with col2:
-    st.metric("🏔️ 최고 발생 시즌",  max_row["season"])
+    st.metric("🏔️ 최고 발생 시즌", max_row["season"])
 with col3:
-    st.metric("❄️ 겨울 평균 ILI",   f"{season_avg.get('겨울', 0):.1f}")
+    st.metric("❄️ 겨울 평균 ILI",  f"{season_avg.get('겨울', 0):.1f}")
 with col4:
-    st.metric("☀️ 여름 평균 ILI",   f"{season_avg.get('여름', 0):.1f}")
+    st.metric("☀️ 여름 평균 ILI",  f"{season_avg.get('여름', 0):.1f}")
 
 st.markdown("---")
 
 # ════════════════════════════════
-# 1. 시즌별 ILI 주간 추이 (라인차트)
+# 1. 시즌별 ILI 주간 추이
 # ════════════════════════════════
 st.markdown('<div class="section-header">📈 시즌별 ILI 주간 추이</div>',
             unsafe_allow_html=True)
 
 all_seasons = sorted(flu["season"].unique())
-selected    = st.multiselect("시즌 선택 (복수 가능)", options=all_seasons, default=all_seasons)
-filtered    = flu[flu["season"].isin(selected)]
+selected    = st.multiselect(
+    "시즌 선택 (복수 가능)",
+    options=all_seasons,
+    default=all_seasons
+)
+filtered = flu[flu["season"].isin(selected)]
 
 fig_line = px.line(
     filtered,
@@ -199,9 +213,10 @@ st.markdown("""
 💡 <b>해석:</b>
 빨간 점선(유행 기준 ILI = 6.6)을 초과하는 구간이 실질적 독감 유행 시기입니다.
 대부분의 시즌에서 <b>15~30주차(12월~2월, 겨울)</b>에 최고점을 기록합니다.
-특히 2016-2017 시즌은 1월 초 조기 폭증(86.2), 2024-2025 시즌은 최대 99.8을 기록하며
+2016-2017 시즌은 1월 초 조기 폭증(86.2), 2024-2025 시즌은 최대 99.8을 기록하며
 역대 최고 수준을 보였습니다.
-코로나19 대유행 시기(2020-21·2021-22)에는 방역 조치의 영향으로 독감이 사실상 소멸 수준으로 억제되었습니다.
+코로나19 대유행 시기(2020-21·2021-22)에는 방역 조치의 영향으로
+독감이 사실상 소멸 수준으로 억제되었습니다.
 </div>
 """, unsafe_allow_html=True)
 
@@ -292,7 +307,8 @@ st.markdown("""
 <div class="insight-box">
 💡 <b>해석:</b>
 짙은 붉은색(고위험)이 <b>1~2월</b>에 집중됩니다.
-2020-21·2021-22 시즌은 전체적으로 색이 옅어 코로나19 방역 조치의 효과를 시각적으로 확인할 수 있습니다.
+2020-21·2021-22 시즌은 전체적으로 색이 옅어 코로나19 방역 조치의 효과를
+시각적으로 확인할 수 있습니다.
 2022-23 시즌부터 다시 붉어지며 독감이 재확산되는 양상이 뚜렷합니다.
 2025-26 시즌은 가을(10~11월)부터 이미 붉은색을 띠어 <b>조기 유행</b> 패턴이 주목됩니다.
 </div>
@@ -332,8 +348,12 @@ with col_c:
         text="최고 ILI",
         height=420
     )
-    fig_peak.add_hline(y=threshold, line_dash="dash", line_color="navy",
-                       annotation_text=f"유행 기준 ({threshold})")
+    fig_peak.add_hline(
+        y=threshold,
+        line_dash="dash",
+        line_color="navy",
+        annotation_text=f"유행 기준 ({threshold})"
+    )
     fig_peak.update_traces(texttemplate="%{text:.1f}", textposition="outside")
     fig_peak.update_layout(plot_bgcolor="#f8f9fa", xaxis_tickangle=-30)
     st.plotly_chart(fig_peak, use_container_width=True)
@@ -380,11 +400,11 @@ st.markdown("""
   <li><b>유행 강도 해마다 다름:</b> 시즌별 최고 ILI는 최저 약 2(코로나 시기)에서
       최고 99.8(2024-25)까지 매우 큰 편차를 보입니다.</li>
   <li><b>코로나19 방역의 독감 억제 효과:</b> 2020-2022년 마스크 착용·사회적 거리두기 시행 기간 동안
-      독감 유행이 사실상 소멸되었습니다. 이는 비약물적 개입이 독감 억제에도 매우 효과적임을 보여주는
-      자연 실험 사례입니다.</li>
+      독감 유행이 사실상 소멸되었습니다.
+      이는 비약물적 개입이 독감 억제에도 매우 효과적임을 보여주는 자연 실험 사례입니다.</li>
   <li><b>방역 해제 후 반등:</b> 2022-23 시즌부터 독감이 빠르게 재유행하였고,
       2023-24·2024-25 시즌에는 대규모 유행이 다시 발생했습니다.</li>
-  <li><b>2025-26 시즌 이상 조기 유행:</b> 통상 12~1월에 정점을 찍는 독감이 이 시즌에는
+  <li><b>2025-26 시즌 조기 유행:</b> 통상 12~1월에 정점을 찍는 독감이 이 시즌에는
       9~11월부터 이례적으로 높은 수치(50~70대)를 기록하고 있어 주목이 필요합니다.</li>
 </ul>
 </div>
