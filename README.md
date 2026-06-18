@@ -19,8 +19,10 @@
 
 | 데이터 | 출처 | 링크 |
 |--------|------|------|
-| 인플루엔자 의사환자(ILI) 분율 | 질병관리청 | [독감 발생률 데이터]([https://docs.google.com/spreadsheets/d/1zJJbrSwZWN-kDLi8TACeWFvY1YrQ93ntUR3d9keuSls/edit?pli=1&gid=2035883614#gid=2035883614](https://dportal.kdca.go.kr/pot/is/st/influ.do) |
-| 서울 일별 기온 데이터 | 기상청 (지점 108, 서울) | [날씨 데이터](https://docs.google.com/spreadsheets/d/19jlyrFNC27CuZqgjz52jzsghsI5rBP4z4mqb28-f994/edit?gid=1333599954#gid=1333599954) |
+| 인플루엔자 의사환자(ILI) 분율 | 질병관리청 | [독감 발생률 데이터][https://docs.google.com/spreadsheets/d/1zJJbrSwZWN-kDLi8TACeWFvY1YrQ93ntUR3d9keuSls/edit?pli=1&gid=2035883614#gid=2035883614](https://dportal.kdca.go.kr/pot/is/st/influ.do) |
+| 서울 일별 기온 데이터 | 기상청 (지점 108, 서울) | [날씨 데이터](https://data.kma.go.kr/cmmn/main.do
+)
+)) |
 
 - **독감 데이터** : 2014-15 시즌 ~ 2025-26 시즌 주차별 ILI 분율
 - **기온 데이터** : 1907년 ~ 2026년 서울 일별 평균·최저·최고 기온
